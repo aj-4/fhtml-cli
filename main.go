@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/fatih/color"
 )
@@ -21,6 +22,7 @@ func printHTML(htmlStr string) {
 	indentIdx := 0
 	lineBuffer := ""
 	firstChar := true
+
 	inClosingTag := false
 	inOpeningTag := true
 
@@ -47,25 +49,7 @@ func printHTML(htmlStr string) {
 			continue
 		}
 
-		if nextChar == "<" && nextNextChar != "/" {
-			if char == ">" {
-				printHTMLLine(lineBuffer, indentIdx, true)
-				lineBuffer = ""
-				indentIdx++
-			} else if lineBuffer != "" {
-				printHTMLLine(lineBuffer, indentIdx, false)
-			}
-			inOpeningTag = true
-			continue
-		}
-
-		if inOpeningTag && char == ">" {
-			printHTMLLine(lineBuffer, indentIdx, true)
-			lineBuffer = ""
-			indentIdx++
-			inOpeningTag = false
-			continue
-		}
+		// fmt.Println("called", inClosingTag, inOpeningTag)
 
 		if nextChar == "<" && nextNextChar == "/" {
 			if inClosingTag || inOpeningTag {
@@ -78,6 +62,7 @@ func printHTML(htmlStr string) {
 			inClosingTag = true
 			continue
 		}
+
 		if inClosingTag && char == ">" {
 			indentIdx--
 			printHTMLLine(lineBuffer, indentIdx, true)
@@ -85,6 +70,35 @@ func printHTML(htmlStr string) {
 			inClosingTag = false
 			continue
 		}
+
+		if nextChar == "<" && nextNextChar != "/" {
+			// close opening tag
+			if char == ">" {
+				printHTMLLine(lineBuffer, indentIdx, true)
+				isSelfClosingTag := strings.Contains(lineBuffer, "meta") || strings.Contains(lineBuffer, "img")
+				if !isSelfClosingTag {
+					indentIdx++
+				}
+				inClosingTag = false
+			} else if lineBuffer != "" {
+				printHTMLLine(lineBuffer, indentIdx, false)
+			}
+			lineBuffer = ""
+			inOpeningTag = true
+			continue
+		}
+
+		if inOpeningTag && char == ">" {
+			isSelfClosingTag := strings.Contains(lineBuffer, "meta") || strings.Contains(lineBuffer, "<img")
+			printHTMLLine(lineBuffer, indentIdx, true)
+			lineBuffer = ""
+			if !isSelfClosingTag {
+				indentIdx++
+			}
+			inOpeningTag = false
+			continue
+		}
+
 	}
 }
 
@@ -95,7 +109,16 @@ func printHTMLLine(buffer string, whiteSpace int, useColor bool) {
 	}
 	lineStr := fmt.Sprintf("%s%s", padding, buffer)
 	if useColor {
-		color.Cyan(lineStr)
+		if strings.Contains(lineStr, "HTML") {
+			color.Red(lineStr)
+		} else if strings.Contains(lineStr, "HEAD") {
+			color.Magenta(lineStr)
+		} else if strings.Contains(lineStr, "BODY") {
+			color.Green(lineStr)
+		} else {
+			color.Cyan(lineStr)
+		}
+
 	} else {
 		fmt.Println(lineStr)
 	}
