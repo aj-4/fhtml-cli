@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 
@@ -8,18 +9,11 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Println("need exactly 2 args")
-		return
+	scanner := bufio.NewScanner(os.Stdin)
+	htmlStr := ""
+	for scanner.Scan() {
+		htmlStr += scanner.Text()
 	}
-
-	htmlStr := os.Args[1]
-
-	if htmlStr[0] != '<' {
-		fmt.Println("not valid html")
-		return
-	}
-
 	printHTML(htmlStr)
 }
 
